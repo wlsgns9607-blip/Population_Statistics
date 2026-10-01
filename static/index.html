@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>서울시 구별 인구 · CCTV 대시보드</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>서울시 구별 인구 현황</h1>
+    <p>SQLite DB의 데이터를 API로 불러와 그래프로 보여줍니다.</p>
+  </header>
+
+  <section class="cards" id="kpis"></section>
+
+  <section class="controls">
+    <div class="group" id="metricBtns"></div>
+    <div class="group" id="orderBtns"></div>
+  </section>
+
+  <section class="card"><h2 id="barTitle"></h2><div class="chart-box tall"><canvas id="barChart"></canvas></div></section>
+  <section class="card"><h2>인구수 vs CCTV 수</h2><div class="chart-box"><canvas id="scatterChart"></canvas></div></section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
