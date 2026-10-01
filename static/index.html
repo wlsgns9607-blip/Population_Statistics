@@ -29,29 +29,58 @@
     <div class="chart-box">
       <canvas id="scatterChart"></canvas>
     </div>
-    <div id="regressionCard" style="margin-top:16px; padding:16px; background:#f8fafc; border:1.5px solid #0F3040; border-radius:10px;">
-      <h3 style="margin:0 0 12px; font-size:16px; color:#0F3040; display:flex; align-items:center; gap:6px;">
-        📐 선형 회귀 분석 (기울기 & y절편)
-      </h3>
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
-        <div style="background:#fff; padding:12px; border-radius:8px; border:1px solid #cbd5e1;">
+    <div id="regressionCard" style="margin-top:16px; padding:20px; background:#ffffff; border:2px solid #0F3040; border-radius:14px; box-shadow:0 4px 12px rgba(15,48,64,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <h3 style="margin:0; font-size:18px; color:#0F3040; display:flex; align-items:center; gap:8px;">
+          📐 인구수 대비 CCTV 선형 회귀 분석 (기울기 & y절편 & 잔차)
+        </h3>
+        <span style="font-size:13px; color:#64748b; background:#f1f5f9; padding:4px 10px; border-radius:20px; font-weight:600;">
+          💡 차트 점 클릭 시 해당 구 상세 분석
+        </span>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:16px;">
+        <div style="background:#f8fafc; padding:12px 14px; border-radius:10px; border:1px solid #cbd5e1;">
           <span style="color:#64748b; font-size:13px; font-weight:600;">회귀 방정식 (y = ax + b)</span>
           <b id="regEq" style="display:block; font-size:17px; color:#0F3040; margin-top:4px;">-</b>
         </div>
-        <div style="background:#fff; padding:12px; border-radius:8px; border:1px solid #cbd5e1;">
+        <div style="background:#f8fafc; padding:12px 14px; border-radius:10px; border:1px solid #cbd5e1;">
           <span style="color:#64748b; font-size:13px; font-weight:600;">기울기 (Slope, a)</span>
-          <b id="regSlope" style="display:block; font-size:17px; color:#030164; margin-top:4px;">-</b>
+          <b id="regSlope" style="display:block; font-size:17px; color:#2563eb; margin-top:4px;">-</b>
         </div>
-        <div style="background:#fff; padding:12px; border-radius:8px; border:1px solid #cbd5e1;">
+        <div style="background:#f8fafc; padding:12px 14px; border-radius:10px; border:1px solid #cbd5e1;">
           <span style="color:#64748b; font-size:13px; font-weight:600;">y절편 (Intercept, b)</span>
           <b id="regIntercept" style="display:block; font-size:17px; color:#030164; margin-top:4px;">-</b>
         </div>
-        <div style="background:#fff; padding:12px; border-radius:8px; border:1px solid #cbd5e1;">
+        <div style="background:#f8fafc; padding:12px 14px; border-radius:10px; border:1px solid #cbd5e1;">
           <span style="color:#64748b; font-size:13px; font-weight:600;">설명력 (R² 결정계수)</span>
           <b id="regR2" style="display:block; font-size:17px; color:#030164; margin-top:4px;">-</b>
         </div>
       </div>
-      <div style="margin-top:12px; font-size:14px; color:#1e293b; line-height:1.6; background:#fff; padding:12px; border-radius:8px; border:1px solid #cbd5e1;" id="regSummary">
+
+      <!-- Top Over / Under Lists -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom:14px;">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px;">
+          <h4 style="margin:0 0 10px; color:#1e40af; font-size:15px; display:flex; align-items:center; gap:6px;">
+            🔵 CCTV 과다 설치 자치구 TOP 3 (오차 +)
+          </h4>
+          <div id="topOverList" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:14px;">
+          <h4 style="margin:0 0 10px; color:#991b1b; font-size:15px; display:flex; align-items:center; gap:6px;">
+            🔴 CCTV 과소 설치 자치구 TOP 3 (오차 -)
+          </h4>
+          <div id="topUnderList" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+      </div>
+
+      <!-- Detailed District Inspector -->
+      <div id="districtDetailPanel" style="background:#f1f5f9; padding:14px; border-radius:10px; border:1px solid #cbd5e1; display:none;">
+        <h4 id="detailTitle" style="margin:0 0 8px; color:#0F3040; font-size:15px;">🔍 구별 상세 회귀 분석</h4>
+        <div id="detailContent" style="font-size:14px; color:#334155; line-height:1.6;"></div>
+      </div>
+
+      <div style="margin-top:12px; font-size:14px; color:#1e293b; line-height:1.6; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;" id="regSummary">
       </div>
     </div>
   </section>

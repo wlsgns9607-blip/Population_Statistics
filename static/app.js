@@ -113,9 +113,27 @@ function calcLinearRegression(pts) {
   const maxX = Math.max(...xValues);
 
   const residuals = pts.map(p => {
-    const pred = slope * p.x + intercept;
+    const pred = Math.round(slope * p.x + intercept);
     const diff = p.y - pred;
-    return { name: p.name, x: p.x, y: p.y, pred: Math.round(pred), diff: Math.round(diff) };
+    
+    // Dynamic color & size based on residual
+    let color = '#64748b'; // default slate
+    let radius = 7;
+    if (diff >= 200) {
+      color = '#2563eb'; // Over CCTV (Blue)
+      radius = 9;
+    } else if (diff <= -200) {
+      color = '#dc2626'; // Under CCTV (Red)
+      radius = 9;
+    }
+
+    return {
+      ...p,
+      pred,
+      diff,
+      color,
+      radius
+    };
   });
 
   residuals.sort((a, b) => b.diff - a.diff);
@@ -128,14 +146,39 @@ function calcLinearRegression(pts) {
       { x: minX, y: slope * minX + intercept },
       { x: maxX, y: slope * maxX + intercept }
     ],
-    topOver: residuals[0],
-    topUnder: residuals[residuals.length - 1]
+    residuals,
+    topOver3: residuals.slice(0, 3),
+    topUnder3: residuals.slice(-3).reverse()
   };
+}
+
+function showDistrictDetail(p) {
+  const panel = document.getElementById('districtDetailPanel');
+  const title = document.getElementById('detailTitle');
+  const content = document.getElementById('detailContent');
+  if (!panel || !p) return;
+
+  panel.style.display = 'block';
+  const statusBadge = p.diff >= 0
+    ? `<span style="color:#2563eb; font-weight:bold;">+${fmt(p.diff)}대 (과다 설치)</span>`
+    : `<span style="color:#dc2626; font-weight:bold;">${fmt(p.diff)}대 (과소 설치)</span>`;
+
+  title.innerHTML = `🔍 <strong>${p.name}</strong> 상세 회귀 오차 분석`;
+  content.innerHTML = `
+    • <b>인구수:</b> ${fmt(p.x)}명 &nbsp;|&nbsp; 
+    • <b>실제 CCTV:</b> ${fmt(p.y)}대 &nbsp;|&nbsp; 
+    • <b>추세선 예측치:</b> ${fmt(p.pred)}대 <br>
+    • <b>오차 (실제 - 예측):</b> ${statusBadge}<br>
+    <div style="margin-top:6px; color:#475569; font-size:13px;">
+      ${p.name}의 경우 인구수(${fmt(p.x)}명) 기준 선형 회귀 기대 설치량은 <b>${fmt(p.pred)}대</b>이나, 
+      실제로는 <b>${fmt(p.y)}대</b>가 설치되어 추세 대비 <b>${statusBadge}</b> 상태입니다.
+    </div>
+  `;
 }
 
 function renderScatter() {
   const year = state.scatterYear;
-  const pts = state.data.map(r => {
+  const rawPts = state.data.map(r => {
     let yValue = r.cctv;
     if (year !== 'total') {
       yValue = r['cctv_' + year] || 0;
@@ -143,7 +186,7 @@ function renderScatter() {
     return { x: r.population, y: yValue, name: r.name };
   });
 
-  const reg = calcLinearRegression(pts);
+  const reg = calcLinearRegression(rawPts);
 
   if (reg) {
     const eqSign = reg.intercept >= 0 ? '+' : '-';
@@ -151,12 +194,30 @@ function renderScatter() {
     document.getElementById('regSlope').textContent = `${reg.slope.toFixed(5)} (1만명당 ${(reg.slope * 10000).toFixed(1)}대)`;
     document.getElementById('regIntercept').textContent = `${reg.intercept.toFixed(1)}대`;
     document.getElementById('regR2').textContent = `${(reg.r2 * 100).toFixed(1)}% (R²=${reg.r2.toFixed(3)})`;
+    
+    // Render Top Over List
+    document.getElementById('topOverList').innerHTML = reg.topOver3.map(r => `
+      <div style="display:flex; justify-size:space-between; justify-content:space-between; background:#fff; padding:6px 10px; border-radius:6px; cursor:pointer;" onclick='showDistrictDetail(${JSON.stringify(r)})'>
+        <span><strong>${r.name}</strong> (${fmt(r.x)}명)</span>
+        <span style="color:#1d4ed8; font-weight:700;">+${fmt(r.diff)}대</span>
+      </div>
+    `).join('');
+
+    // Render Top Under List
+    document.getElementById('topUnderList').innerHTML = reg.topUnder3.map(r => `
+      <div style="display:flex; justify-content:space-between; background:#fff; padding:6px 10px; border-radius:6px; cursor:pointer;" onclick='showDistrictDetail(${JSON.stringify(r)})'>
+        <span><strong>${r.name}</strong> (${fmt(r.x)}명)</span>
+        <span style="color:#b91c1c; font-weight:700;">${fmt(r.diff)}대</span>
+      </div>
+    `).join('');
+
     document.getElementById('regSummary').innerHTML = `
       💡 <b>회귀 분석 요약:</b> 기울기 <b>${reg.slope.toFixed(5)}</b> (인구 1만 명당 CCTV <b>${(reg.slope * 10000).toFixed(1)}대</b> 증가 추세), y절편 <b>${reg.intercept.toFixed(1)}대</b>.<br>
-      • 추세선 대비 <b>CCTV 최다 설치 구:</b> <strong>${reg.topOver.name}</strong> (예상 대비 +${fmt(reg.topOver.diff)}대)<br>
-      • 추세선 대비 <b>CCTV 최소 설치 구:</b> <strong>${reg.topUnder.name}</strong> (예상 대비 ${fmt(reg.topUnder.diff)}대)
+      • 파란색 점: 추세 대비 CCTV 과다 설치 자치구 | 빨간색 점: 추세 대비 CCTV 과소 설치 자치구 (클릭 시 상세 조회)
     `;
   }
+
+  const pts = reg ? reg.residuals : rawPts;
 
   scatterChart?.destroy();
   scatterChart = new Chart(document.getElementById('scatterChart'), {
@@ -167,31 +228,50 @@ function renderScatter() {
           label: `회귀 추세선 (y = ${reg ? reg.slope.toFixed(5) : 0}x + ${reg ? reg.intercept.toFixed(1) : 0})`,
           type: 'line',
           data: reg ? reg.linePoints : [],
-          borderColor: '#e03131',
+          borderColor: '#ef4444',
           borderWidth: 3,
           pointRadius: 0,
           fill: false,
           tension: 0
         },
         {
-          label: '구별 데이터',
+          label: '구별 데이터 (오차별 색상 시각화)',
           data: pts,
-          backgroundColor: '#2f6bff',
-          pointRadius: 6,
-          pointHoverRadius: 9
+          backgroundColor: pts.map(p => p.color || '#2f6bff'),
+          pointRadius: pts.map(p => p.radius || 6),
+          pointHoverRadius: 11
         }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const el = elements[0];
+          if (el.datasetIndex === 1) { // scatter dataset
+            const p = pts[el.index];
+            showDistrictDetail(p);
+          }
+        }
+      },
       plugins: {
         legend: { display: true, position: 'top' },
         tooltip: {
           callbacks: {
             title: c => c[0].raw.name || c[0].dataset.label,
-            label: c => c.dataset.type === 'line'
-              ? `추세선 (y = ${reg.slope.toFixed(5)}x ${reg.intercept >= 0 ? '+' : '-'} ${Math.abs(reg.intercept).toFixed(1)})`
-              : [`인구 ${fmt(c.raw.x)}명`, `CCTV ${fmt(c.raw.y)}대`]
+            label: c => {
+              if (c.dataset.type === 'line') {
+                return `추세선 (y = ${reg.slope.toFixed(5)}x ${reg.intercept >= 0 ? '+' : '-'} ${Math.abs(reg.intercept).toFixed(1)})`;
+              }
+              const p = c.raw;
+              const statusText = p.diff >= 0 ? `+${fmt(p.diff)}대 (과다)` : `${fmt(p.diff)}대 (과소)`;
+              return [
+                `인구수: ${fmt(p.x)}명`,
+                `실제 CCTV: ${fmt(p.y)}대`,
+                `예측 CCTV: ${fmt(p.pred)}대`,
+                `오차(잔차): ${statusText}`
+              ];
+            }
           }
         }
       },
