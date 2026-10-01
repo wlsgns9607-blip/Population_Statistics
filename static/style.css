@@ -4,7 +4,6 @@ body{margin:0;background:var(--bg);color:var(--tx);font-family:Pretendard,-apple
 header h1{margin:0 0 4px;font-size:24px;color:var(--tx)}header p{margin:0 0 16px;color:var(--mut);font-size:14px}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
 
-/* KPI 카드의 border color를 #0F3040 2px 테두리로 지정 */
 .kpi {
   background: var(--card);
   border: 2px solid #0F3040 !important;
@@ -20,17 +19,16 @@ header h1{margin:0 0 4px;font-size:24px;color:var(--tx)}header p{margin:0 0 16px
 
 .card {
   background: var(--card);
-  border: 1px solid var(--bd);
+  border: 2px solid #0F3040 !important;
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 16px;
 }
 
 .kpi span{color:var(--mut);font-size:13px;font-weight:600}.kpi b{display:block;font-size:22px;margin-top:6px;color:#0F3040;font-weight:700}
-.card h2{margin:0 0 12px;font-size:16px;color:var(--tx)}
+.card h2{margin:0 0 12px;font-size:18px;color:var(--tx)}
 .controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center}.group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-/* 지표 및 정렬 버튼 30px #030164 strong 스타일 유지 */
 .target-btn-30 {
   font-size: 30px !important;
   font-weight: 700 !important;
@@ -52,6 +50,41 @@ button.target-btn-30.on {
 }
 button.target-btn-30.on strong {
   color: #FFFFFF !important;
+}
+
+/* CCTV Table Style */
+.cctv-table-wrap {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+.cctv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: center;
+}
+.cctv-table th {
+  background-color: #0F3040;
+  color: #ffffff;
+  padding: 10px 12px;
+  font-weight: 700;
+  border: 1px solid #0F3040;
+}
+.cctv-table td {
+  padding: 8px 12px;
+  border: 1px solid #e3e7ef;
+}
+.cctv-table tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+.growth-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: rgba(47, 107, 255, 0.1);
+  color: #030164;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .chart-box{position:relative;height:380px}.chart-box.tall{height:620px}

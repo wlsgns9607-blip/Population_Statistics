@@ -10,7 +10,7 @@
 <body>
   <header>
     <h1>서울시 구별 인구 현황</h1>
-    <p>SQLite DB의 데이터를 API로 불러와 그래프로 보여줍니다.</p>
+    <p>SQLite DB의 데이터를 API로 불러와 그래프와 표로 보여줍니다.</p>
   </header>
 
   <section class="cards" id="kpis"></section>
@@ -22,6 +22,27 @@
 
   <section class="card"><h2 id="barTitle"></h2><div class="chart-box tall"><canvas id="barChart"></canvas></div></section>
   <section class="card"><h2>인구수 vs CCTV 수</h2><div class="chart-box"><canvas id="scatterChart"></canvas></div></section>
+<section class="card">
+  <h2 id="growthTitle">최근 CCTV 증가율 순위</h2>
+  <div class="chart-box tall">
+    <canvas id="growthChart"></canvas>
+  </div>
+</section>
+<!-- Yearly CCTV chart -->
+<section class="card">
+  <h2 id="cctvYearTitle">년도별 CCTV 설치 현황</h2>
+  <div class="controls" id="yearControls">
+    <div class="group" id="yearBtns"></div>
+  </div>
+  <div class="chart-box tall">
+    <canvas id="cctvYearChart"></canvas>
+  </div>
+</section>
+
+  <section class="card">
+    <h2>📊 CCTV 연도별(2014/2015/2016) 설치 현황 및 최근 3년 증가율 (%)</h2>
+    <div id="cctvTableWrap" class="cctv-table-wrap"></div>
+  </section>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="/static/app.js"></script>
