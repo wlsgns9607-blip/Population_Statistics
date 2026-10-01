@@ -87,6 +87,52 @@ function renderBar() {
   });
 }
 
+function calcLinearRegression(pts) {
+  const n = pts.length;
+  if (n === 0) return null;
+  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0, sumYY = 0;
+  pts.forEach(p => {
+    sumX += p.x;
+    sumY += p.y;
+    sumXY += p.x * p.y;
+    sumXX += p.x * p.x;
+    sumYY += p.y * p.y;
+  });
+  const meanX = sumX / n;
+  const meanY = sumY / n;
+  const denom = sumXX - (sumX * sumX) / n;
+  const slope = denom !== 0 ? (sumXY - (sumX * sumY) / n) / denom : 0;
+  const intercept = meanY - slope * meanX;
+  
+  const totalSS = pts.reduce((acc, p) => acc + Math.pow(p.y - meanY, 2), 0);
+  const resSS = pts.reduce((acc, p) => acc + Math.pow(p.y - (slope * p.x + intercept), 2), 0);
+  const r2 = totalSS !== 0 ? Math.max(0, 1 - (resSS / totalSS)) : 0;
+
+  const xValues = pts.map(p => p.x);
+  const minX = Math.min(...xValues);
+  const maxX = Math.max(...xValues);
+
+  const residuals = pts.map(p => {
+    const pred = slope * p.x + intercept;
+    const diff = p.y - pred;
+    return { name: p.name, x: p.x, y: p.y, pred: Math.round(pred), diff: Math.round(diff) };
+  });
+
+  residuals.sort((a, b) => b.diff - a.diff);
+
+  return {
+    slope,
+    intercept,
+    r2,
+    linePoints: [
+      { x: minX, y: slope * minX + intercept },
+      { x: maxX, y: slope * maxX + intercept }
+    ],
+    topOver: residuals[0],
+    topUnder: residuals[residuals.length - 1]
+  };
+}
+
 function renderScatter() {
   const year = state.scatterYear;
   const pts = state.data.map(r => {
@@ -96,16 +142,59 @@ function renderScatter() {
     }
     return { x: r.population, y: yValue, name: r.name };
   });
+
+  const reg = calcLinearRegression(pts);
+
+  if (reg) {
+    const eqSign = reg.intercept >= 0 ? '+' : '-';
+    document.getElementById('regEq').textContent = `y = ${reg.slope.toFixed(5)}x ${eqSign} ${Math.abs(reg.intercept).toFixed(1)}`;
+    document.getElementById('regSlope').textContent = `${reg.slope.toFixed(5)} (1만명당 ${(reg.slope * 10000).toFixed(1)}대)`;
+    document.getElementById('regIntercept').textContent = `${reg.intercept.toFixed(1)}대`;
+    document.getElementById('regR2').textContent = `${(reg.r2 * 100).toFixed(1)}% (R²=${reg.r2.toFixed(3)})`;
+    document.getElementById('regSummary').innerHTML = `
+      💡 <b>회귀 분석 요약:</b> 기울기 <b>${reg.slope.toFixed(5)}</b> (인구 1만 명당 CCTV <b>${(reg.slope * 10000).toFixed(1)}대</b> 증가 추세), y절편 <b>${reg.intercept.toFixed(1)}대</b>.<br>
+      • 추세선 대비 <b>CCTV 최다 설치 구:</b> <strong>${reg.topOver.name}</strong> (예상 대비 +${fmt(reg.topOver.diff)}대)<br>
+      • 추세선 대비 <b>CCTV 최소 설치 구:</b> <strong>${reg.topUnder.name}</strong> (예상 대비 ${fmt(reg.topUnder.diff)}대)
+    `;
+  }
+
   scatterChart?.destroy();
   scatterChart = new Chart(document.getElementById('scatterChart'), {
     type: 'scatter',
-    data: { datasets: [{ data: pts, backgroundColor: '#2f6bff', pointRadius: 6, pointHoverRadius: 9 }] },
+    data: {
+      datasets: [
+        {
+          label: `회귀 추세선 (y = ${reg ? reg.slope.toFixed(5) : 0}x + ${reg ? reg.intercept.toFixed(1) : 0})`,
+          type: 'line',
+          data: reg ? reg.linePoints : [],
+          borderColor: '#e03131',
+          borderWidth: 3,
+          pointRadius: 0,
+          fill: false,
+          tension: 0
+        },
+        {
+          label: '구별 데이터',
+          data: pts,
+          backgroundColor: '#2f6bff',
+          pointRadius: 6,
+          pointHoverRadius: 9
+        }
+      ]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: {
-        title: c => c[0].raw.name,
-        label: c => [`인구 ${fmt(c.raw.x)}명`, `CCTV ${fmt(c.raw.y)}대`],
-      } } },
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: {
+          callbacks: {
+            title: c => c[0].raw.name || c[0].dataset.label,
+            label: c => c.dataset.type === 'line'
+              ? `추세선 (y = ${reg.slope.toFixed(5)}x ${reg.intercept >= 0 ? '+' : '-'} ${Math.abs(reg.intercept).toFixed(1)})`
+              : [`인구 ${fmt(c.raw.x)}명`, `CCTV ${fmt(c.raw.y)}대`]
+          }
+        }
+      },
       scales: {
         x: {
           ticks: { color: '#010736', font: { size: 14, weight: 'bold' } },
