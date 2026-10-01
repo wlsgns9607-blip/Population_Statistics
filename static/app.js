@@ -4,25 +4,37 @@ const METRICS = {
   foreign_pop:       '외국인',
   senior:            '고령자(65세+)',
   cctv:              'CCTV 총계',
-  cctv_growth_rate:  '최근 CCTV 증가율(%)',
+  cctv_growth_rate:  '연평균 CCTV 증가율(%)',
+  cctv_ratio:        '인구 100명당 CCTV 대수',
 };
-const state = { metric: 'population', order: 'desc', year: '2014', data: [] };
+const state = { metric: 'population', order: 'desc', year: '2014', cctvYear: '2014', scatterYear: 'total', data: [] };
 let barChart, scatterChart, growthChart, growthYearChart, yearChart;
 const fmt = n => typeof n === 'number' ? n.toLocaleString('ko-KR') : n;
 
 async function load() {
   const res = await fetch('/api/districts');
-  state.data = (await res.json()).districts;
+  const data = await res.json();
+  state.data = data.districts.map(r => ({
+    ...r,
+    cctv_growth_rate: Number((r.cctv_growth_rate / 3).toFixed(1)),
+    cctv_ratio: Number(((r.cctv / r.population) * 100).toFixed(2))
+  }));
   render();
 }
 
-function makeButtons(id, entries, key) {
+function makeButtons(id, entries, key, size = 'small') {
   const el = document.getElementById(id);
+  if (!el) return;
   el.innerHTML = '';
   entries.forEach(([value, label]) => {
     const b = document.createElement('button');
     b.innerHTML = `<strong>${label}</strong>`;
     b.classList.add('target-btn-30');
+    if (size === 'medium') {
+      b.style.padding = '8px 16px';
+      b.style.fontSize = '14px';
+      b.style.height = 'auto';
+    }
     if (state[key] === value) {
       b.classList.add('on');
     }
@@ -36,12 +48,13 @@ function renderKpis() {
   const max = d.reduce((a, b) => (a.population > b.population ? a : b));
   const min = d.reduce((a, b) => (a.population < b.population ? a : b));
   const avgGrowth = (d.reduce((s, r) => s + r.cctv_growth_rate, 0) / d.length).toFixed(1);
+  const avgRatio = (d.reduce((s, r) => s + r.cctv_ratio, 0) / d.length).toFixed(2);
   
   document.getElementById('kpis').innerHTML = [
     ['서울 전체 인구(25개 구)', fmt(total) + '명'],
     ['인구 최다', `${max.name} ${fmt(max.population)}`],
     ['인구 최소', `${min.name} ${fmt(min.population)}`],
-    ['평균 최근 CCTV 증가율', `${avgGrowth}%`],
+    ['평균 인구 100명당 CCTV', `${avgRatio}대`],
   ].map(([a, b]) => `<div class="kpi"><span>${a}</span><b>${b}</b></div>`).join('');
 }
 
@@ -75,7 +88,14 @@ function renderBar() {
 }
 
 function renderScatter() {
-  const pts = state.data.map(r => ({ x: r.population, y: r.cctv, name: r.name }));
+  const year = state.scatterYear;
+  const pts = state.data.map(r => {
+    let yValue = r.cctv;
+    if (year !== 'total') {
+      yValue = r['cctv_' + year] || 0;
+    }
+    return { x: r.population, y: yValue, name: r.name };
+  });
   scatterChart?.destroy();
   scatterChart = new Chart(document.getElementById('scatterChart'), {
     type: 'scatter',
@@ -139,7 +159,7 @@ function renderGrowthYearChart() {
   const labels = rows.map(r => r.name);
   const data = rows.map(r => r.growth);
   growthYearChart?.destroy();
-  growthYearChart = new Chart(document.getElementById('growthChart'), {
+  growthYearChart = new Chart(document.getElementById('growthYearChart'), {
     type: 'bar',
     data: {
       labels: labels,
@@ -162,7 +182,7 @@ function renderYearChart() {
   const rows = [...state.data];
   const labels = rows.map(r => r.name);
   const popData = rows.map(r => r.population);
-  const cctvData = rows.map(r => r['cctv_' + state.year] || 0);
+  const cctvData = rows.map(r => r['cctv_' + state.cctvYear] || 0);
   yearChart?.destroy();
   yearChart = new Chart(document.getElementById('cctvYearChart'), {
     type: 'bar',
@@ -201,7 +221,8 @@ function renderCctvTable() {
           <th>2015년</th>
           <th>2016년</th>
           <th>CCTV 총계</th>
-          <th>최근 3년 증가율 (%)</th>
+          <th>인구 100명당 CCTV</th>
+          <th>연평균 증가율 (%)</th>
         </tr>
       </thead>
       <tbody>
@@ -215,6 +236,7 @@ function renderCctvTable() {
         <td>${fmt(r.cctv_2015)}대</td>
         <td>${fmt(r.cctv_2016)}대</td>
         <td><strong>${fmt(r.cctv)}대</strong></td>
+        <td><strong>${r.cctv_ratio.toFixed(2)}대</strong></td>
         <td><span class="growth-badge">${r.cctv_growth_rate}%</span></td>
       </tr>
     `;
@@ -226,8 +248,16 @@ function renderCctvTable() {
 function render() {
   makeButtons('metricBtns', Object.entries(METRICS), 'metric');
   makeButtons('orderBtns', [['desc', '많은 순'], ['asc', '적은 순']], 'order');
-  makeButtons('yearBtns', [['2014','2014'],['2015','2015'],['2016','2016']], 'year');
+  
+  makeButtons('scatterYearBtns', [['total','총계'], ['2014','2014년'], ['2015','2015년'], ['2016','2016년']], 'scatterYear', 'medium');
+  makeButtons('growthYearBtns', [['2014','2014년'],['2015','2015년'],['2016','2016년']], 'year', 'medium');
+  makeButtons('yearBtns', [['2014','2014년'],['2015','2015년'],['2016','2016년']], 'cctvYear', 'medium');
+
   renderKpis(); renderBar(); renderScatter(); renderGrowthChart(); renderGrowthYearChart(); renderYearChart(); renderCctvTable();
 }
 
+// Select event bindings removed as we reverted to buttons
+function bindEvents() {}
+
+bindEvents();
 load();

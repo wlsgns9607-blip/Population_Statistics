@@ -21,18 +21,35 @@
   </section>
 
   <section class="card"><h2 id="barTitle"></h2><div class="chart-box tall"><canvas id="barChart"></canvas></div></section>
-  <section class="card"><h2>인구수 vs CCTV 수</h2><div class="chart-box"><canvas id="scatterChart"></canvas></div></section>
+  <section class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>인구수 vs CCTV 수</h2>
+      <div class="controls" style="margin:0;"><div class="group" id="scatterYearBtns"></div></div>
+    </div>
+    <div class="chart-box">
+      <canvas id="scatterChart"></canvas>
+    </div>
+  </section>
 <section class="card">
-  <h2 id="growthTitle">최근 CCTV 증가율 순위</h2>
+  <h2 id="growthTitle">연평균 CCTV 증가율 순위</h2>
   <div class="chart-box tall">
     <canvas id="growthChart"></canvas>
   </div>
 </section>
+<section class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2 id="growthYearTitle">선택 년도 CCTV 증가율 순위</h2>
+    <div class="controls" style="margin:0;"><div class="group" id="growthYearBtns"></div></div>
+  </div>
+  <div class="chart-box tall">
+    <canvas id="growthYearChart"></canvas>
+  </div>
+</section>
 <!-- Yearly CCTV chart -->
 <section class="card">
-  <h2 id="cctvYearTitle">년도별 CCTV 설치 현황</h2>
-  <div class="controls" id="yearControls">
-    <div class="group" id="yearBtns"></div>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2 id="cctvYearTitle">년도별 CCTV 설치 현황</h2>
+    <div class="controls" style="margin:0;"><div class="group" id="yearBtns"></div></div>
   </div>
   <div class="chart-box tall">
     <canvas id="cctvYearChart"></canvas>
@@ -40,7 +57,7 @@
 </section>
 
   <section class="card">
-    <h2>📊 CCTV 연도별(2014/2015/2016) 설치 현황 및 최근 3년 증가율 (%)</h2>
+    <h2>📊 CCTV 연도별(2014/2015/2016) 설치 현황 및 연평균 증가율 (%)</h2>
     <div id="cctvTableWrap" class="cctv-table-wrap"></div>
   </section>
 
